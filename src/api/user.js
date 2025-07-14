@@ -85,23 +85,6 @@ export function userLikedSongsIDs(uid) {
 }
 
 /**
- * 每日签到
- * 说明 : 调用此接口可签到获取积分
- * -  type: 签到类型 , 默认 0, 其中 0 为安卓端签到 ,1 为 web/PC 签到
- * @param {number} type
- */
-export function dailySignin(type = 0) {
-  return request({
-    url: '/daily_signin',
-    method: 'post',
-    params: {
-      type,
-      timestamp: new Date().getTime(),
-    },
-  });
-}
-
-/**
  * 获取收藏的专辑（需要登录）
  * 说明 : 调用此接口可获取到用户收藏的专辑
  * - limit : 返回数量 , 默认为 25
