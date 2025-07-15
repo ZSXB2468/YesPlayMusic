@@ -4,6 +4,154 @@ function resolve(dir) {
   return path.join(__dirname, dir);
 }
 
+// 根据环境变量决定构建配置
+const isNightlyBuild = process.env.NIGHTLY_BUILD === 'true';
+const isGithubAction = process.env.GITHUB_ACTIONS_BUILD === 'true';
+
+// 夜间构建简化配置
+const nightlyTargets = {
+  mac: {
+    target: [
+      {
+        target: 'dmg',
+        arch: ['x64', 'arm64', 'universal'],
+      },
+    ],
+    artifactName: '${productName}-${os}-${version}-${arch}.${ext}',
+    category: 'public.app-category.music',
+    darkModeSupport: true,
+  },
+  win: {
+    target: [
+      {
+        target: 'portable',
+        arch: ['x64'],
+      },
+    ],
+    publisherName: 'YesPlayMusic',
+    icon: 'build/icons/icon.ico',
+  },
+  linux: {
+    target: [
+      {
+        target: 'AppImage',
+        arch: ['x64']
+      },
+    ],
+    category: 'Music',
+    icon: './build/icon.icns',
+  },
+};
+
+// 完整构建配置
+const fullTargets = {
+  mac: {
+    target: [
+      {
+        target: 'dmg',
+        arch: ['x64', 'arm64', 'universal'],
+      },
+    ],
+    artifactName: '${productName}-${os}-${version}-${arch}.${ext}',
+    category: 'public.app-category.music',
+    darkModeSupport: true,
+  },
+  win: {
+    target: [
+      {
+        target: 'portable',
+        arch: ['x64', 'ia32', 'arm64'],
+      },
+      {
+        target: 'nsis',
+        arch: ['x64', 'ia32', 'arm64'],
+      },
+      {
+        target: 'msi',
+        arch: ['x64', 'ia32', 'arm64'],
+      }
+    ],
+    publisherName: 'YesPlayMusic',
+    icon: 'build/icons/icon.ico',
+  },
+  linux: {
+    target: [
+      {
+        target: 'AppImage',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'tar.gz',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'deb',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'rpm',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'flatpak',
+        arch: ['x64', 'arm64'],
+      },
+      {
+        target: 'pacman',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+    ],
+    category: 'Music',
+    icon: './build/icon.icns',
+  },
+};
+
+// GithubActions构建配置
+const actionTargets = {
+  mac: {
+    target: [
+      {
+        target: 'dmg',
+        arch: ['x64', 'arm64', 'universal'],
+      },
+    ],
+    artifactName: '${productName}-${os}-${version}-${arch}.${ext}',
+    category: 'public.app-category.music',
+    darkModeSupport: true,
+  },
+  win: {
+    target: [
+      {
+        target: 'nsis',
+        arch: ['x64', 'arm64'],
+      },
+    ],
+    publisherName: 'YesPlayMusic',
+    icon: 'build/icons/icon.ico',
+  },
+  linux: {
+    target: [
+      {
+        target: 'AppImage',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'deb',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+      {
+        target: 'rpm',
+        arch: ['x64', 'arm64', 'armv7l'],
+      },
+    ],
+    category: 'Music',
+    icon: './build/icon.icns',
+  },
+};
+
+const buildTargets = isNightlyBuild ? nightlyTargets : (isGithubAction ? actionTargets : fullTargets);
+
+
 module.exports = {
   // 生产环境打包不输出 map
   productionSourceMap: false,
@@ -104,62 +252,9 @@ module.exports = {
         directories: {
           output: 'dist_electron',
         },
-        mac: {
-          target: [
-            {
-              target: 'dmg',
-              arch: ['x64', 'arm64', 'universal'],
-            },
-          ],
-          artifactName: '${productName}-${os}-${version}-${arch}.${ext}',
-          category: 'public.app-category.music',
-          darkModeSupport: true,
-        },
-        win: {
-          target: [
-            {
-              target: 'portable',
-              arch: ['x64'],
-            },
-            {
-              target: 'nsis',
-              arch: ['x64'],
-            },
-          ],
-          publisherName: 'YesPlayMusic',
-          icon: 'build/icons/icon.ico',
-          publish: ['github'],
-        },
-        linux: {
-          target: [
-            {
-              target: 'AppImage',
-              arch: ['x64'],
-            },
-            {
-              target: 'tar.gz',
-              arch: ['x64', 'arm64'],
-            },
-            {
-              target: 'deb',
-              arch: ['x64', 'armv7l', 'arm64'],
-            },
-            {
-              target: 'rpm',
-              arch: ['x64'],
-            },
-            {
-              target: 'snap',
-              arch: ['x64'],
-            },
-            {
-              target: 'pacman',
-              arch: ['x64'],
-            },
-          ],
-          category: 'Music',
-          icon: './build/icon.icns',
-        },
+        mac: buildTargets.mac,
+        win: buildTargets.win,
+        linux: buildTargets.linux,
         dmg: {
           icon: 'build/icons/icon.icns',
         },
@@ -167,6 +262,11 @@ module.exports = {
           oneClick: true,
           perMachine: true,
           deleteAppDataOnUninstall: true,
+        },
+        msi: {
+          oneClick: false,
+          perMachine: true,
+          warningsAsErrors: false,
         },
       },
       // 主线程的配置文件
